@@ -11,17 +11,18 @@ def d_sigmoid (input)
 end
 
 class Neuron
-  attr_accessor :input_connections, :output_connections, :inputs, :delta, :output
-  attr_reader :layer, :sum, :delta
+  attr_accessor :input_connections, :output_connections, :delta, :output
+  attr_reader :layer, :sum
 
   def initialize (layer)
     @layer = layer
     @delta = 0
     @sum = 0
+    @output = 0
   end
 
   def calculate_delta
-    if !@layer.is_output_layer and !@layer.is_input_layer # Skip output (already done) and input (no need)
+    if !@layer.is_output_layer and !@layer.is_input_layer # Skip output (already done) and input (no need). This also skips biases
       @delta = 0
       for connection in @output_connections
         neuron = connection.output_neuron
@@ -29,30 +30,6 @@ class Neuron
       end
 
       @delta *= d_sigmoid(@sum)
-    end
-  end
-
-  def calculate_gradients
-    if !@layer.is_input_layer # Input has no input connections
-      for connection in @input_connections
-        connection.calculate_gradient
-      end
-    end
-  end
-
-  def calculate_delta_changes
-    if !@layer.is_input_layer # Input has no input connections
-      for connection in @input_connections
-        connection.calculate_delta_change
-      end
-    end
-  end
-
-  def update_weights
-    if !@layer.is_input_layer # Input has no input connections
-      for connection in @input_connections
-        connection.update_weight
-      end
     end
   end
 
@@ -131,30 +108,6 @@ class Layer
     end
   end
 
-  def calculate_deltas
-    for neuron in neurons
-      neuron.calculate_delta
-    end
-  end
-
-  def calculate_gradients
-    for neuron in @neurons
-      neuron.calculate_gradients
-    end
-  end
-
-  def calculate_delta_changes
-    for neuron in @neurons
-      neuron.calculate_delta_changes
-    end
-  end
-
-  def update_weights
-    for neuron in @neurons
-      neuron.update_weights
-    end
-  end
-
   def pulse
     if !@is_input_layer
       for neuron in @neurons
@@ -190,12 +143,15 @@ class Layer
 end
 
 class Network
-  attr_reader :layers, :input_neuron_count, :hidden_neuron_count, :output_neuron_count, :global_error, :outputs
+  attr_reader :layers, :input_neuron_count, :hidden_neuron_count, :output_neuron_count, :global_error, :outputs, :neurons, :connections
 
   def initialize (layer_count, input_neuron_count, hidden_neuron_count, output_neuron_count)
     @global_error = 1
     generate_layers(layer_count, input_neuron_count, hidden_neuron_count, output_neuron_count)
     generate_connections
+
+    get_all_neurons
+    get_all_connections
   end
 
   def pulse
@@ -250,26 +206,50 @@ class Network
     end
     
     # Calculate deltas for other layers
-    for layer in @layers
-      layer.calculate_deltas
+    for neuron in @neurons
+      neuron.calculate_delta
     end
   end
 
   def calculate_gradients
-    for layer in @layers
-      layer.calculate_gradients
+    for connection in @connections
+      connection.calculate_gradient
     end
   end
 
   def calculate_delta_changes
-    for layer in @layers
-      layer.calculate_delta_changes
+    for connection in @connections
+      connection.calculate_delta_change
     end
   end
 
   def update_weights
+    for connection in @connections
+      connection.update_weight
+    end
+  end
+
+  def get_all_neurons
+    @neurons = Array.new
+
     for layer in @layers
-      layer.update_weights
+      for neuron in layer.neurons
+        @neurons << neuron
+      end
+    end
+  end
+
+  def get_all_connections
+    @connections = Array.new
+
+    for layer in @layers
+      for neuron in layer.neurons
+        if !layer.is_output_layer
+          for connection in neuron.output_connections
+            @connections << connection
+          end
+        end
+      end
     end
   end
 
