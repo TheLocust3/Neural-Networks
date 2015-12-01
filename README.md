@@ -1,2 +1,2 @@
-# ai-attempts
-A repository full of my attempts at creating neural networks
+# Neural Networks
+A repository full of my neural networks
