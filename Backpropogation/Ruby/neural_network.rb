@@ -71,7 +71,7 @@ class Connection
   def initialize (input_neuron, output_neuron)
     @input_neuron = input_neuron
     @output_neuron = output_neuron
-    @weight = rand(100) / 100.0
+    @weight = (rand(200) / 100.0) - 1 # Between -1 and 1
     @delta_change = 0
   end
 
@@ -221,6 +221,13 @@ class Network
           for connection in neuron.output_connections
             @connections << connection
           end
+        end
+      end
+
+      bias = layer.bias
+      if !layer.is_input_layer
+        for connection in bias.output_connections
+          @connections << connection
         end
       end
     end

@@ -19,6 +19,11 @@ def test (network)
 
     output = network.layers.last.neurons[0].output.round
 
+    puts "Input: " + inputs.to_s
+    puts "Correct Output: " + correct[0].to_s
+    puts "Network Output: " + output.to_s
+    puts "Error: " + (network.global_error * 100.0).to_s + "%"
+
     if output != correct[0]
       return false
     end
