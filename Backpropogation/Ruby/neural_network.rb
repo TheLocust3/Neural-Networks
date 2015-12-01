@@ -18,7 +18,7 @@ class Neuron
     @layer = layer
     @delta = 0
     @sum = 0
-    @output = 0
+    @output = 1.0
   end
 
   def calculate_delta
@@ -143,7 +143,7 @@ class Layer
 end
 
 class Network
-  attr_reader :layers, :input_neuron_count, :hidden_neuron_count, :output_neuron_count, :global_error, :outputs, :neurons, :connections
+  attr_reader :layers, :global_error, :neurons, :connections
 
   def initialize (layer_count, input_neuron_count, hidden_neuron_count, output_neuron_count)
     @global_error = 1
@@ -155,7 +155,7 @@ class Network
   end
 
   def pulse
-    for layer in layers
+    for layer in @layers
       layer.pulse
     end
   end
@@ -168,34 +168,18 @@ class Network
     pulse
     calculate_global_error(desired_results)
 
-    @outputs = Array.new
-    for neuron in @layers.last.neurons
-      @outputs << neuron.output
-    end
-
     back_propogation(desired_results)
   end
 
   private
   def back_propogation (desired_results)
     calculate_deltas(desired_results)
-    calculate_gradients
-    calculate_delta_changes
-    update_weights
-  end
 
-  def calculate_global_error (desired_results)
-    outputs = Array.new
-    for neuron in @layers.last.neurons
-      outputs << neuron.output
+    for connection in @connections
+      connection.calculate_gradient
+      connection.calculate_delta_change
+      connection.update_weight
     end
-    
-    sum = 0
-    outputs.each_with_index do |output, index|
-      sum += (desired_results[index] - output) ** 2.0
-    end
-
-    @global_error = sum / desired_results.length
   end
 
   def calculate_deltas (desired_results)
@@ -211,22 +195,18 @@ class Network
     end
   end
 
-  def calculate_gradients
-    for connection in @connections
-      connection.calculate_gradient
+  def calculate_global_error (desired_results)
+    outputs = Array.new
+    for neuron in @layers.last.neurons
+      outputs << neuron.output
     end
-  end
+    
+    sum = 0
+    outputs.each_with_index do |output, index|
+      sum += (desired_results[index] - output) ** 2.0
+    end
 
-  def calculate_delta_changes
-    for connection in @connections
-      connection.calculate_delta_change
-    end
-  end
-
-  def update_weights
-    for connection in @connections
-      connection.update_weight
-    end
+    @global_error = sum / desired_results.length
   end
 
   def get_all_neurons

@@ -11,17 +11,18 @@ network = Network.new(3, 2, 3, 1)
 
 times_trained = 0
 times_correct = 0
-while times_correct < 50
+while times_correct < 20
   inputs, correct = generate_xor
   network.train(inputs, correct)
+  output = network.layers.last.neurons[0].output.round
 
   puts "Input: " + inputs.to_s
   puts "Correct Output: " + correct[0].to_s
-  puts "Network Output: " + network.outputs[0].round.to_s
+  puts "Network Output: " + output.to_s
   puts "Error: " + network.global_error.to_s
 
-  if network.outputs[0].round == correct[0]
-    if network.global_error < 0.01
+  if output == correct[0]
+    if network.global_error < 0.1
       times_correct += 1
     else
       times_correct = 0
