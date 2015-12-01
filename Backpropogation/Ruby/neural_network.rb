@@ -1,12 +1,14 @@
 $LEARNING_RATE = 0.7
 $MOMENTUM = 0.3
 
-def sigmoid (input)
+# Sigmoid function
+def activation (input)
   1 / (1 + Math.exp(-input))
 end
 
-def d_sigmoid (input)
-  s = sigmoid(input)
+# Derivative of sigmoid function
+def d_activation (input)
+  s = activation(input)
   s * (1.0 - s)
 end
 
@@ -15,10 +17,12 @@ class Neuron
   attr_reader :layer, :sum
 
   def initialize (layer)
-    @layer = layer
+    @input_connections = Array.new
+    @output_connections = Array.new
     @delta = 0
-    @sum = 0
     @output = 1.0
+    @layer = layer
+    @sum = 0
   end
 
   def calculate_delta
@@ -29,7 +33,7 @@ class Neuron
         @delta += neuron.delta * connection.weight
       end
 
-      @delta *= d_sigmoid(@sum)
+      @delta *= d_activation(@sum)
     end
   end
 
@@ -40,7 +44,7 @@ class Neuron
       @sum += connection.calculate_value
     end
 
-    # Get bias
+    # Get bias connection
     for connection in @layer.bias.output_connections
       if connection.output_neuron == self
         @sum += connection.calculate_value
@@ -48,18 +52,12 @@ class Neuron
       end
     end
 
-    @output = sigmoid(@sum)
+    @output = activation(@sum)
   end
 
   def generate_output_connections (next_layer)
-    @output_connections = Array.new
-
     for neuron in next_layer.neurons
       connection = Connection.new(self, neuron)
-
-      if neuron.input_connections.nil?
-        neuron.input_connections = Array.new
-      end
 
       neuron.input_connections << connection
       @output_connections << connection
@@ -186,7 +184,7 @@ class Network
     # Calculate deltas for output layer
     layers.last.neurons.each_with_index do |neuron, index|
       error = neuron.output - desired_results[index]
-      neuron.delta = -error * d_sigmoid(neuron.sum)
+      neuron.delta = -error * d_activation(neuron.sum)
     end
     
     # Calculate deltas for other layers
@@ -196,14 +194,9 @@ class Network
   end
 
   def calculate_global_error (desired_results)
-    outputs = Array.new
-    for neuron in @layers.last.neurons
-      outputs << neuron.output
-    end
-    
     sum = 0
-    outputs.each_with_index do |output, index|
-      sum += (desired_results[index] - output) ** 2.0
+    @layers.last.neurons.each_with_index do |neuron, index|
+      sum += (desired_results[index] - neuron.output) ** 2.0
     end
 
     @global_error = sum / desired_results.length
